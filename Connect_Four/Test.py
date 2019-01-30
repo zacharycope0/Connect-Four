@@ -1,26 +1,18 @@
-from BoardClass import Board
+from Board import Board
 from BoardChecker import BoardChecker
+from GamePlay import GamePlay
 
-b = Board()
-   
+b = Board()   
 bc = BoardChecker(b)
-
+gp = GamePlay(bc)
 bc.board.toString()
 
-count = 0
+count_moves = 0 #count total moves played
 
-while True:
+while count_moves<56:
 
-    token = 'X'
-    bc.board.make_move(int(input('Player 1:')),token)
-    bc.board.toString()
-    if bc.has_winner() == True:
-        print('Player 1 wins!')
+    if gp.user_move('Player 1', 'X') == True:
         break
-            
-    token = 'O'
-    bc.board.make_move(int(input('Player 2:')),token)
-    bc.board.toString()
-    if bc.has_winner() == True:
-        print('Player 2 wins!')
+    if gp.user_move('Player 2', 'O') == True:
         break
+    count_moves += 2
