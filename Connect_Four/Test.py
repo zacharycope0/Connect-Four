@@ -1,41 +1,18 @@
-from BoardClass import Board
+from Board import Board
 from BoardChecker import BoardChecker
+from GamePlay import GamePlay
 
-b = Board()
-   
+b = Board()   
 bc = BoardChecker(b)
-
+gp = GamePlay(bc)
 bc.board.toString()
 
-count_moves = 0
+count_moves = 0 #count total moves played
 
 while count_moves<56:
 
-    while True:
-        try:
-            input_move = int(input('Player 1:'))
-            while bc.board.check_move(input_move) != True:
-                input_move = int(input('No space in column. Try again:'))
-            break
-        except:
-            print("Value out of range try again")
-
-    token = 'X'
-    bc.board.make_move(input_move,token)
-    count_moves += 1
-    bc.board.toString()
-    if bc.has_winner() == True:
-        print('Player 1 wins!')
+    if gp.user_move('Player 1', 'X') == True:
         break
-
-    input_move = int(input('Player 2:'))
-    while bc.board.check_move(input_move) != True:
-	    input_move = int(input('No space in column. Try again:'))
-            
-    token = 'O'
-    bc.board.make_move(input_move,token)
-    count_moves += 1
-    bc.board.toString()
-    if bc.has_winner() == True:
-        print('Player 2 wins!')
+    if gp.user_move('Player 2', 'O') == True:
         break
+    count_moves += 2

@@ -2,18 +2,18 @@ class BoardChecker:
     
     def __init__(self,board):
         self.board = board
-        
-    def spots_have_token(self, spots,marker):
-        have_marker = True
+
+    def spots_have_token(self, spots, token):
+        have_token = True
         
         for spot in spots:
             try:
-                if self.board.b_list[spot[0]][spot[1]] != marker:
-                    have_marker = False
+                if self.board.b_list[spot[0]][spot[1]] != token:
+                    have_token = False
             except:
-                have_marker = False
+                have_token = False
         
-        return have_marker          
+        return have_token          
         
     def has_winner(self):
         
