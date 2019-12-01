@@ -91,10 +91,8 @@ class Computer:
                 return potential_moves_3[0][1]
 
             else:
-                #plays move if there is nothing good to play
-                for col, row in enumerate(self.b.open_row):
-                    if row != -1:
-                        return col
+                return potential_moves_3[int(random()*len(potential_moves_3))][1]
+            
                        
                     
                 
