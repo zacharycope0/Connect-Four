@@ -28,7 +28,4 @@ while count_moves<(56-1):
     
 
     count_moves += 2
-   
-   
-
 
