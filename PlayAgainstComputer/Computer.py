@@ -1,5 +1,9 @@
 from random import random
 
+#
+#Update to consider when computer has no good moves
+#
+
 class Computer:
     
     def __init__(self, board, token):

@@ -1,31 +1,31 @@
 from Board import Board
 from Computer import Computer
 from Player import Player
+import sys
 
 b = Board()
 comp_1 = Computer(b,'X')
 player_2 = Player(b,'Player 2','O')
 
-b.make_move(3,'X')
-b.toString()
-
 count_moves = 1 #count total moves played
-game_over = False
-while count_moves<(56-1):    
-    
-    player_2.user_move()  
-    if b.has_winner() == True:
-        print('Player 2 wins!')
-        break
-    
-    input("Press Enter to continue")
+while count_moves<((b.ROWS+1)*(b.COLS+1)):    
     
     comp_1.move()      
     if b.has_winner() == True:
         print('Computer wins :(')
-        break
+        sys.exit(0)   
     
+    count_moves += 1
+    
+    player_2.user_move()  
+    if b.has_winner() == True:
+        print('Player 2 wins!')
+        sys.exit(0)
+    count_moves += 1
+    
+    input("Press Enter to continue")
     
 
-    count_moves += 2
+
+print("Wow you tied. Good game.")
 

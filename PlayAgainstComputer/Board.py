@@ -1,32 +1,178 @@
+'''
+The Board object creates a connect four board with Space objects. It updates necessary Space objects
+after each move
+'''
 #Import space object to track spaces on Board
 from Space import Space
 
-#represents a four square board
+#represents a connect four board
 class Board: 
     
     def __init__(self):
-        #dictionary for all spaces on board
-        self.spaces = [[Space() for x in list(range(8))] for x in list(range(7))]
-        #highest row containing open move in each column
-        self.open_row = [6]*8
-        #contains the last move
+        #set columns and rows in board
+        self.ROWS = 7 
+        self.COLS = 8 
+        #create 2D list for all spaces on board
+        self.spaces = [[Space() for x in list(range(self.COLS))] for x in list(range(self.ROWS))]
+        #highest row containing open move in each column. Set to start at bottom row
+        self.open_row = [6]*8                               
+        #contains the last move played
         self.last_move = []
-        #contains number of moves played
+        #tracks number of moves played
         self.num_moves = 0
-        #set space index and open spaces next to each space
+        #Set Space.index to track the postion of each space on the board
         self.setup_space_index()
+        #Set Space.open_x and Space.open_o to track open spaces withing 4 potions on the board
         self.setup_open()
+
     
+#****************************************************************************************************
+#BOARD SET-UP: Updating space objects
+#****************************************************************************************************  
+
+    #set-up Space.index for each space in board
+    def setup_space_index(self):
+        for row in range(self.ROWS): #stops iterations after rows 0-6 have been updated        
+            for col in range(self.COLS): #stops iterations after cols 0-7 have been updated
+                self.spaces[row][col].index = [row,col] #sets index
+    
+    #set-up  Space.open_x and Space.open_o for each space in board
+    def setup_open(self):
+        for row in range(self.ROWS): #stops iterations after rows 0-6 have been updated        
+            for col in range(self.COLS): #stops iterations after cols 0-7 have been updated
+                                  
+                shift = 1 #reprents distance between spaces on board (1 would be a space dirrectly next to the space being updated)
+                while shift <= 3: #stops iteration when shift is greater than 3
+                    #Update open down parameters
+                    if self.space_exists_and_empty([row+shift,col]):
+                        self.spaces[row+shift][col].open_x['d'].append([row,col])
+                        self.spaces[row+shift][col].open_o['d'].append([row,col])
+                    if self.space_exists_and_empty([row-shift,col]):
+                        self.spaces[row-shift][col].open_x['d'].append([row,col])
+                        self.spaces[row-shift][col].open_o['d'].append([row,col])
+                                    
+                    #update open forward-slash
+                    if self.space_exists_and_empty([row+shift,col-shift]):
+                        self.spaces[row+shift][col-shift].open_x['fs'].append([row,col])
+                        self.spaces[row+shift][col-shift].open_o['fs'].append([row,col])
+                    if self.space_exists_and_empty([row-shift,col+shift]):
+                        self.spaces[row-shift][col+shift].open_x['fs'].append([row,col])
+                        self.spaces[row-shift][col+shift].open_o['fs'].append([row,col])
+                    
+                    #update open back-slash
+                    if self.space_exists_and_empty([row-shift,col-shift]):
+                        self.spaces[row-shift][col-shift].open_x['bs'].append([row,col])
+                        self.spaces[row-shift][col-shift].open_o['bs'].append([row,col])
+                    if self.space_exists_and_empty([row+shift,col+shift]):
+                        self.spaces[row+shift][col+shift].open_x['bs'].append([row,col])
+                        self.spaces[row+shift][col+shift].open_o['bs'].append([row,col])
+                    
+                    #update open accross
+                    if self.space_exists_and_empty([row,col-shift]):
+                        self.spaces[row][col-shift].open_x['a'].append([row,col])
+                        self.spaces[row][col-shift].open_o['a'].append([row,col])
+                    if self.space_exists_and_empty([row,col+shift]):
+                        self.spaces[row][col+shift].open_x['a'].append([row,col])
+                        self.spaces[row][col+shift].open_o['a'].append([row,col])
+                    shift += 1                       
+    
+#****************************************************************************************************
+#GAME PLAY UPDATES: Updates Space objects after a move is made
+#****************************************************************************************************
+
+    #Make a move on the board and updates Space object attributes around move
+    def make_move(self, move, token):
+        row = self.open_row[move] #determine the row index of the move
+           
+        if token=='X':
+            self.spaces[row][move].token = ('\033[0;37;41m' + token + '\033[0m') #Shade X red
+        else:
+            self.spaces[row][move].token = ('\033[0;37;46m' + token + '\033[0m') #Shade O blue
+        self.open_row[move] -= 1 #update open row attribute
+        self.last_move = [row,move] #update last_move attribute
+        self.update_space_dicts(token) #update space attributes
+        self.num_moves += 1
+
+    #updates the Space dictionary attributes
+    def update_space_dicts(self,token):
+        row,col = self.last_move
+                                
+        shift = 1 #track distance around token played
+        while shift <= 3: #only update Space dicts within 3 spaces of the last move
+            #Update open down parameters
+            if self.space_exists_and_empty([row-shift,col]): #Check that space exists
+                self.make_changes((row-shift),(col),'d',row,col,token,True) #Make changes if space exists                           
+
+            #update open forward-slash
+            if self.space_exists_and_empty([row+shift,col-shift]):
+                self.make_changes((row+shift),(col-shift),'fs',row,col,token,True)                
+            if self.space_exists_and_empty([row-shift,col+shift]):
+                self.make_changes((row-shift),(col+shift),'fs',row,col,token,False)
+                
+            
+            #update open back-slash
+            if self.space_exists_and_empty([row-shift,col-shift]):
+                self.make_changes((row-shift),(col-shift),'bs',row,col,token,True)                 
+            if self.space_exists_and_empty([row+shift,col+shift]):
+                self.make_changes((row+shift),(col+shift),'bs',row,col,token,False)
+
+            
+            #update open accross
+            if self.space_exists_and_empty([row,col-shift]):
+                self.make_changes(row,(col-shift),'a',row,col,token,True)
+            if self.space_exists_and_empty([row,col+shift]):
+                self.make_changes(row,(col+shift),'a',row,col,token,False)
+            shift += 1
+    
+    #Makes changes to the Space dictionaries that track moves in the area.
+    #Called by update_space_dicts 
+    def make_changes(self,shifted_r,shifted_c,direction,row,col,token,first_check):
+        if token == "X":
+            if self.contains(self.spaces[shifted_r][shifted_c].open_x[direction],[row,col]): #check that move/[row,col] exists in Space.open_x   
+                self.spaces[shifted_r][shifted_c].has_x[direction].append([row,col]) #append move to Space.has_x 
+            
+            #Updates Space.has_o and Space.open_o to account for X blocking the O's in a given direction
+            for r,c in reversed(self.spaces[shifted_r][shifted_c].has_o[direction]): 
+                    if self.to_remove_check(r,c,row,col,direction,first_check): 
+                        self.spaces[shifted_r][shifted_c].has_o[direction].remove([r,c])
+            for r,c in reversed(self.spaces[shifted_r][shifted_c].open_o[direction]):
+                    if self.to_remove_check(r,c,row,col,direction,first_check):
+                        self.spaces[shifted_r][shifted_c].open_o[direction].remove([r,c])            
+        
+        elif token == "O":
+            if self.contains(self.spaces[shifted_r][shifted_c].open_o[direction],[row,col]): #check that move/[row,col] exists in Space.open_o  
+                self.spaces[shifted_r][shifted_c].has_o[direction].append([row,col]) #append move to Space.has_o
+            
+            #Updates Space.has_x and Space.open_x to account for O blocking the X's in a given direction
+            for r,c in reversed(self.spaces[shifted_r][shifted_c].has_x[direction]):
+                    if self.to_remove_check(r,c,row,col,direction,first_check):
+                        self.spaces[shifted_r][shifted_c].has_x[direction].remove([r,c])
+            for r,c in reversed(self.spaces[shifted_r][shifted_c].open_x[direction]):
+                    if self.to_remove_check(r,c,row,col,direction,first_check):
+                        self.spaces[shifted_r][shifted_c].open_x[direction].remove([r,c])
+        
+        try:
+            self.spaces[shifted_r][shifted_c].open_x[direction].remove([row,col])
+        except:
+            pass
+        try:    
+            self.spaces[shifted_r][shifted_c].open_o[direction].remove([row,col])
+        except:
+            pass
+        
+        #Update Space.x_count and Space.o_count
+        self.update_comp_moves(shifted_r,shifted_c,direction)
+
     #Update space.x_count & o_count so that the computer can evaluate next best move
     def update_comp_moves(self,row,col,direction):
         
-        #Empty x dicts if they could not create four in a row 
+        #Empty x dicts if they could not create four in a row in given direction
         if len(self.spaces[row][col].has_x[direction]) + len(self.spaces[row][col].open_x[direction]) < 3:
             self.spaces[row][col].has_x[direction] = []
             self.spaces[row][col].open_x[direction] = []
             
         
-        #Empty o dictsif they could not create four in a row    
+        #Empty o dictsif they could not create four in a row in given direction    
         if len(self.spaces[row][col].has_o[direction]) + len(self.spaces[row][col].open_o[direction]) < 3:
             self.spaces[row][col].has_o[direction] = []
             self.spaces[row][col].open_o[direction] = [] 
@@ -119,99 +265,58 @@ class Board:
                 count += 1
         return count
 
-    #Make a move on the board
-    def make_move(self, move, token):
-        if move>=0 and move<=7:
-            row = self.open_row[move]
-            if row >= 0:
-                if token=='X':
-                    self.spaces[row][move].token = ('\033[0;37;41m' + token + '\033[0m')
-                else:
-                    self.spaces[row][move].token = ('\033[0;37;46m' + token + '\033[0m')
-                self.open_row[move] -= 1
-                self.last_move = [row,move]
-                self.update_space_dicts(token)
-                self.num_moves += 1
-        """
-            else:
-                print('The column that you have selected if full. Try a new move.')
-        else: print('The column that you have selected if is not an eligable move. Select a column from 0-7.')
-        """
-    def update_space_dicts(self,token):
-        row,col = self.last_move
-                                
-        shift = 1
-        while shift < 4:
-            #Update open down parameters
-            if self.space_exists_and_empty([row-shift,col]):
-                self.make_changes((row-shift),(col),'d',row,col,token,True)                           
+    #
+    #UPDATE has_winner
+    #
 
-            #update open forward-slash
-            if self.space_exists_and_empty([row+shift,col-shift]):
-                self.make_changes((row+shift),(col-shift),'fs',row,col,token,True)                
-            if self.space_exists_and_empty([row-shift,col+shift]):
-                self.make_changes((row-shift),(col+shift),'fs',row,col,token,False)
-                
-            
-            #update open back-slash
-            if self.space_exists_and_empty([row-shift,col-shift]):
-                self.make_changes((row-shift),(col-shift),'bs',row,col,token,True)                 
-            if self.space_exists_and_empty([row+shift,col+shift]):
-                self.make_changes((row+shift),(col+shift),'bs',row,col,token,False)
+    #Checks last move to determine if there was a winner
+    def has_winner(self):
+        winner = False
 
-            
-            #update open accross
-            if self.space_exists_and_empty([row,col-shift]):
-                self.make_changes(row,(col-shift),'a',row,col,token,True)
-            if self.space_exists_and_empty([row,col+shift]):
-                self.make_changes(row,(col+shift),'a',row,col,token,False)
-            shift += 1
-    
-    #called by update_space_dicts to make changes to the dictionaries.
-    def make_changes(self,shifted_r,shifted_c,direction,row,col,token,first_check):
-        if token == "X":
-            if self.contains(self.spaces[shifted_r][shifted_c].open_x[direction],[row,col]):   
-                self.spaces[shifted_r][shifted_c].has_x[direction].append([row,col])
-            
-            for r,c in reversed(self.spaces[shifted_r][shifted_c].has_o[direction]):
-                    if self.to_remove_check(r,c,row,col,direction,first_check):
-                        self.spaces[shifted_r][shifted_c].has_o[direction].remove([r,c])
-            for r,c in reversed(self.spaces[shifted_r][shifted_c].open_o[direction]):
-                    if self.to_remove_check(r,c,row,col,direction,first_check):
-                        self.spaces[shifted_r][shifted_c].open_o[direction].remove([r,c])            
-        
-        elif token == "O":
-            if self.contains(self.spaces[shifted_r][shifted_c].open_o[direction],[row,col]):   
-                self.spaces[shifted_r][shifted_c].has_o[direction].append([row,col])
-            
-            for r,c in reversed(self.spaces[shifted_r][shifted_c].has_x[direction]):
-                    if self.to_remove_check(r,c,row,col,direction,first_check):
-                        self.spaces[shifted_r][shifted_c].has_x[direction].remove([r,c])
-            for r,c in reversed(self.spaces[shifted_r][shifted_c].open_x[direction]):
-                    if self.to_remove_check(r,c,row,col,direction,first_check):
-                        self.spaces[shifted_r][shifted_c].open_x[direction].remove([r,c])
-        
-        try:
-            self.spaces[shifted_r][shifted_c].open_x[direction].remove([row,col])
-        except:
-            pass
-        try:    
-            self.spaces[shifted_r][shifted_c].open_o[direction].remove([row,col])
-        except:
-            pass
-        
-        #make changes to self.x_count&o_count
-        self.update_comp_moves(shifted_r,shifted_c,direction)
-    
-    #check that a row and column value exist in a space_list 
+        row, col = self.last_move
+        token = self.spaces[row][col].token[-5]
+
+        if token == 'X':
+            if self.spaces[row][col].x_count['total'][3]>0:
+                winner = True
+        if token == 'O':
+            if self.spaces[row][col].o_count['total'][3]>0:
+                winner = True
+
+        return winner
+
+          
+              
+#****************************************************************************************************
+#CHECKS: Functions to check assumptions of other function calls
+#****************************************************************************************************
+
+    #Check that the space exists and doesn't contain a token
+    def space_exists_and_empty(self,index):
+        #Check that row and columns are in bounds
+        if index[0] >= 0 and index[0] <= (self.ROWS-1) and index[1] >= 0 and index[1] <= (self.COLS-1):
+            #Check that space doesn't contain a token
+            if self.spaces[index[0]][index[1]].token == ' ':
+                return True
+            else: return False
+        else: return False
+
+    #Check that a [row, col] value exist in a Space.open_x or Space.open_o
     def contains(self,space_list,space):
         contains = False
         for s in space_list:
             if s == space:
                 contains = True
         return contains
-    
-    #check whether or not the space is blocked by the new token
+           
+            
+    def check_move(self,move):
+        if self.open_row[move] >= 0:
+            return True
+        else:
+            return False
+
+    #check whether the Space is blocked in a given direction by the new token
     def to_remove_check(self,r,c,row,col,direction,first_check):
         remove = False
         if direction == 'd':
@@ -238,187 +343,26 @@ class Board:
             else:
                 if c<col:
                     remove = True
-        #return whether or not to remove index
-        return remove             
-                          
-    #check that the space exists and doesn't contain a token
-    def space_exists_and_empty(self,index):
-        #Check that row and columns are in bounds
-        if index[0] >= 0 and index[0] <= 6 and index[1] >= 0 and index[1] <= 7:
-            #Check that space doesn't contain a token
-            if self.spaces[index[0]][index[1]].token == ' ':
-                return True
-            else: return False
-        else: return False
-           
-    #set-up board.space.index 
-    def setup_space_index(self):
-        row = 6
-        while row >= 0:
-            col = 7            
-            while col >=0:
-                self.spaces[row][col].index = [row,col]
-                col -= 1            
-            row -=1
+        #return whether to remove index
+        return remove 
     
-    #set-up board.space dictionaries
-    def setup_open(self):
-        row = 6
-        while row >= 0:
-            col = 7
-            
-            while col >=0:
-                                  
-                shift = 1
-                while shift < 4:
-                    #Update open down parameters
-                    if self.space_exists_and_empty([row+shift,col]):
-                        self.spaces[row+shift][col].open_x['d'].append([row,col])
-                        self.spaces[row+shift][col].open_o['d'].append([row,col])
-                    if self.space_exists_and_empty([row-shift,col]):
-                        self.spaces[row-shift][col].open_x['d'].append([row,col])
-                        self.spaces[row-shift][col].open_o['d'].append([row,col])
-                                    
-                    #update open forward-slash
-                    if self.space_exists_and_empty([row+shift,col-shift]):
-                        self.spaces[row+shift][col-shift].open_x['fs'].append([row,col])
-                        self.spaces[row+shift][col-shift].open_o['fs'].append([row,col])
-                    if self.space_exists_and_empty([row-shift,col+shift]):
-                        self.spaces[row-shift][col+shift].open_x['fs'].append([row,col])
-                        self.spaces[row-shift][col+shift].open_o['fs'].append([row,col])
-                    
-                    #update open back-slash
-                    if self.space_exists_and_empty([row-shift,col-shift]):
-                        self.spaces[row-shift][col-shift].open_x['bs'].append([row,col])
-                        self.spaces[row-shift][col-shift].open_o['bs'].append([row,col])
-                    if self.space_exists_and_empty([row+shift,col+shift]):
-                        self.spaces[row+shift][col+shift].open_x['bs'].append([row,col])
-                        self.spaces[row+shift][col+shift].open_o['bs'].append([row,col])
-                    
-                    #update open accross
-                    if self.space_exists_and_empty([row,col-shift]):
-                        self.spaces[row][col-shift].open_x['a'].append([row,col])
-                        self.spaces[row][col-shift].open_o['a'].append([row,col])
-                    if self.space_exists_and_empty([row,col+shift]):
-                        self.spaces[row][col+shift].open_x['a'].append([row,col])
-                        self.spaces[row][col+shift].open_o['a'].append([row,col])
-                    shift += 1                       
-                col -= 1            
-            row -=1
-            
-    def check_move(self,move):
-        if self.open_row[move] >= 0:
-            return True
-        else:
-            return False
-                                            
+    #Prints board and with tokens                                        
     def toString(self):
-        print(" 0   1   2   3   4   5   6   7")
-        print(" {} | {} | {} | {} | {} | {} | {} | {}".format(self.spaces[0][0].token,self.spaces[0][1].token,self.spaces[0][2].token,self.spaces[0][3].token,self.spaces[0][4].token,self.spaces[0][5].token,self.spaces[0][6].token,self.spaces[0][7].token))
-        print("------------------------------")        
-        print(" {} | {} | {} | {} | {} | {} | {} | {}".format(self.spaces[1][0].token,self.spaces[1][1].token,self.spaces[1][2].token,self.spaces[1][3].token,self.spaces[1][4].token,self.spaces[1][5].token,self.spaces[1][6].token,self.spaces[1][7].token))
-        print("------------------------------")        
-        print(" {} | {} | {} | {} | {} | {} | {} | {}".format(self.spaces[2][0].token,self.spaces[2][1].token,self.spaces[2][2].token,self.spaces[2][3].token,self.spaces[2][4].token,self.spaces[2][5].token,self.spaces[2][6].token,self.spaces[2][7].token))
-        print("------------------------------")        
-        print(" {} | {} | {} | {} | {} | {} | {} | {}".format(self.spaces[3][0].token,self.spaces[3][1].token,self.spaces[3][2].token,self.spaces[3][3].token,self.spaces[3][4].token,self.spaces[3][5].token,self.spaces[3][6].token,self.spaces[3][7].token))
-        print("------------------------------")        
-        print(" {} | {} | {} | {} | {} | {} | {} | {}".format(self.spaces[4][0].token,self.spaces[4][1].token,self.spaces[4][2].token,self.spaces[4][3].token,self.spaces[4][4].token,self.spaces[4][5].token,self.spaces[4][6].token,self.spaces[4][7].token))
-        print("------------------------------")        
-        print(" {} | {} | {} | {} | {} | {} | {} | {}".format(self.spaces[5][0].token,self.spaces[5][1].token,self.spaces[5][2].token,self.spaces[5][3].token,self.spaces[5][4].token,self.spaces[5][5].token,self.spaces[5][6].token,self.spaces[5][7].token))
-        print("------------------------------")        
-        print(" {} | {} | {} | {} | {} | {} | {} | {}".format(self.spaces[6][0].token,self.spaces[6][1].token,self.spaces[6][2].token,self.spaces[6][3].token,self.spaces[6][4].token,self.spaces[6][5].token,self.spaces[6][6].token,self.spaces[6][7].token))
+        print("  0   1   2   3   4   5   6   7")
+
+        for row in range(self.ROWS): #stops iterations after rows 0-6 have been updated        
+            for col in range(self.COLS): #stops iterations after cols 0-7 have been updated
+                print(f'| {self.spaces[row][col].token} ', end='')
+            print('|\n'+'-'*33)
     
-        #Change last move from red to black
+        #Removes shading on the last move made
         r,c = self.last_move
-        token = self.spaces[r][c].token[-5]
-        
+        token = self.spaces[r][c].token[-5] #determines the token value of the last move made     
+
         if token == 'X':
             self.spaces[r][c].token = ('\033[31m' + token + '\033[0m')
         else:
             self.spaces[r][c].token = ('\033[36m' + token + '\033[0m')
-    #to delete
-    #'\033[31m'
-    #
-    #UPDATE CODE BELOW
-    #
-    def has_winner(self):
-        
-        winner = False
-            
-        while winner == False:
-            row,col = self.last_move
-            token = self.spaces[row][col].token
-            count = 0 # keep track of num in row
-            
-            # check down
-            down_check = [[row+3,col],[row+2, col],[row+1, col]]
-            for_slash_check = [[row+3,col-3] , [row+2,col-2] , [row+1,col-1]]
-            back_slash_check = [[row+3,col+3] , [row+2,col+2] , [row+1,col+1]]
-            side_check = [[row,col-3] , [row,col-2] , [row,col-1]]
-            
-            #Check down                       
-            if self.spots_have_token(down_check, token) == True:
-                winner = True
-                return winner
-                break
-            
-            #Check forward-slash
-            while count <= 3:                
-                if self.spots_have_token(for_slash_check, token) == True:
-                    winner = True
-                    return winner
-                    break
-                else:
-                    try:                   
-                        row, col = for_slash_check[count]
-                        for_slash_check[count] = [row-4, col+4]
-                        count += 1
-                    except:
-                        count += 1
-            
-            #Check back-slash
-            count = 0
-            while count <= 3:                
-                if self.spots_have_token(back_slash_check, token) == True:
-                    winner = True
-                    return winner
-                    break
-                else:
-                    try:                  
-                        row, col = back_slash_check[count]
-                        back_slash_check[count] = [row-4, col-4]
-                        count += 1
-                    except:
-                        count += 1
-                    
-            #Check side to side
-            count = 0
-            while count <= 3:                
-                if self.spots_have_token(side_check, token) == True:
-                    winner = True
-                    return winner
-                    break
-                else:
-                    try:                   
-                        row, col = side_check[count]
-                        side_check[count] = [row, col+4]
-                        count += 1
-                    except:
-                        count += 1
-                    
-            #If no winner        
-            return winner
-            break
+
     
-    def spots_have_token(self, spots, token):
-        have_token = True
-        
-        for spot in spots:
-            try:
-                if self.spaces[spot[0]][spot[1]].token != token:
-                    have_token = False
-            except:
-                have_token = False
-        
-        return have_token 
                  
