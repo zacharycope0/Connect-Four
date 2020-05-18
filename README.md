@@ -8,5 +8,5 @@ Installation & Play
 * Clone this repo to your computer.
 * Install the requirements using `pip install -r requirements.txt`.
 * Make sure you use Python 3.
-* Run 'python Play.py'.
+* Run `python Play.py`.
 * Enjoy!!!
