@@ -13,7 +13,7 @@ class Computer:
     def move(self):
         self.b.make_move(self.decide_move(),self.token)
         print('\n'*100)
-        self.b.toString()
+        self.b.toArray
         
     def decide_move(self):
         

@@ -4,6 +4,7 @@ after each move
 '''
 #Import space object to track spaces on Board
 from Space import Space
+import numpy as np
 
 #represents a connect four board
 class Board: 
@@ -15,6 +16,7 @@ class Board:
         #create 2D list for all spaces on board
         self.spaces = [[Space() for x in list(range(self.COLS))] for x in list(range(self.ROWS))]
         #highest row containing open move in each column. Set to start at bottom row
+        self.array = np.zeros((self.ROWS,self.COLS))
         self.open_row = [6]*8                               
         #contains the last move played
         self.last_move = []
@@ -84,10 +86,7 @@ class Board:
     def make_move(self, move, token):
         row = self.open_row[move] #determine the row index of the move
            
-        if token=='X':
-            self.spaces[row][move].token = ('\033[0;37;41m' + token + '\033[0m') #Shade X red
-        else:
-            self.spaces[row][move].token = ('\033[0;37;46m' + token + '\033[0m') #Shade O blue
+        self.spaces[row][move].token = token #update space with token
         self.open_row[move] -= 1 #update open row attribute
         self.last_move = [row,move] #update last_move attribute
         self.update_space_dicts(token) #update space attributes
@@ -274,7 +273,7 @@ class Board:
         winner = False
 
         row, col = self.last_move
-        token = self.spaces[row][col].token[-5]
+        token = self.spaces[row][col].token
 
         if token == 'X':
             if self.spaces[row][col].x_count['total'][3]>0:
@@ -288,7 +287,7 @@ class Board:
           
               
 #****************************************************************************************************
-#CHECKS: Functions to check assumptions of other function calls
+#CHECKS: Functions to check assumptions of function calls
 #****************************************************************************************************
 
     #Check that the space exists and doesn't contain a token
@@ -353,15 +352,37 @@ class Board:
 
     #
     #
-    #Need to change tokens to 1 & 2 for array
+    #UPDATE: entire board to np.Array and store as Board object
     #
     #
+    #Convert board to a np.array
     def toArray(self):
-        board_array = np.zeros((self.COLS, self.ROWS))
+        # Convert last move 'X' and 'O' to 1 and 2 in array
+        row, col = self.last_move
+        
+        if self.spaces[row][col].token == 'X':
+            token = 1
+        else: token =2
 
-        for row in (range(self.ROWS)):
-            for col in (range(self.COLS)):
-                board_array[row][col] = self.spaces[row][col].token 
+        self.array[row][col] = token
+        
+        return self.array
+        
+        board_array = np.zeros((self.ROWS,self.COLS))
+
+        # # Convert 'X' and 'O' to 1 and 2 in array
+        # for row in (range(self.ROWS)):
+        #     for col in (range(self.COLS)):
+        #         if self.spaces[row][col].token == 'X':
+        #             token = 1
+        #         elif self.spaces[row][col].token == 'O': 
+        #             token = 2
+        #         else: token = 0
+
+        #         board_array[row][col] = token
+        
+        # return board_array
+
 
     #Prints board and with tokens                                        
     def toString(self):
@@ -371,15 +392,6 @@ class Board:
             for col in range(self.COLS): #stops iterations after cols 0-7 have been updated
                 print(f'| {self.spaces[row][col].token} ', end='')
             print('|\n'+'-'*33)
-    
-        #Removes shading on the last move made
-        r,c = self.last_move
-        token = self.spaces[r][c].token[-5] #determines the token value of the last move made     
-
-        if token == 'X':
-            self.spaces[r][c].token = ('\033[31m' + token + '\033[0m')
-        else:
-            self.spaces[r][c].token = ('\033[36m' + token + '\033[0m')
 
     
                  
